@@ -1,0 +1,63 @@
+name: Monitor Kompis Sverige
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Fetch and print matches without emailing or saving
+        type: boolean
+        default: false
+      seed:
+        description: Record current events as already seen (no alert)
+        type: boolean
+        default: false
+      notify_live:
+        description: After seeding, send a one-line “monitor is live” email
+        type: boolean
+        default: false
+      test_email:
+        description: Only send a test email, skip the site check
+        type: boolean
+        default: false
+
+concurrency:
+  group: stockholm-monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run monitor
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          TO_EMAIL: ${{ secrets.TO_EMAIL }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+        run: |
+          args=()
+          if [ "${{ inputs.dry_run }}" = "true" ]; then args+=(--dry-run); fi
+          if [ "${{ inputs.seed }}" = "true" ]; then args+=(--seed); fi
+          if [ "${{ inputs.notify_live }}" = "true" ]; then args+=(--notify-live); fi
+          if [ "${{ inputs.test_email }}" = "true" ]; then args+=(--test-email); fi
+          npx tsx src/monitor.ts "${args[@]}"
+
+      - name: Save seen event IDs
+        if: ${{ inputs.dry_run != true && inputs.test_email != true }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update seen Stockholm event IDs
+          file_pattern: data/seen.json

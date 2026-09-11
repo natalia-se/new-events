@@ -1,0 +1,25 @@
+{
+  "name": "kompissverige-stockholm-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Notify by email when Kompis Sverige posts a new event in Greater Stockholm.",
+  "scripts": {
+    "start": "tsx src/monitor.ts",
+    "dry-run": "tsx src/monitor.ts --dry-run",
+    "seed": "tsx src/monitor.ts --seed",
+    "test-email": "tsx src/monitor.ts --test-email"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "dotenv": "^17.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
